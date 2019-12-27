@@ -46,6 +46,16 @@ def generate_level(level):
                 Tile('empty', x, y)
             elif level[y][x] == '#':
                 Tile('wall', x, y)
+            elif level[y][x] == '/':
+                Tile('water', x, y)
+            elif level[y][x] == '0':
+                Tile('stone', x, y)
+            elif level[y][x] == '2':
+                Tile('stone1', x, y)
+            elif level[y][x] == '3':
+                Tile('stone2', x, y)
+            elif level[y][x] == 'g':
+                Tile('ground', x, y)
             elif level[y][x] == '1':
                 Tile('mob', x, y)
             elif level[y][x] == '@':
@@ -60,7 +70,8 @@ class Tile(pygame.sprite.Sprite):
         super().__init__(tiles_group, all_sprites)
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
-        if tile_type == 'wall':
+        if tile_type == 'wall' or tile_type == 'stone' or tile_type == 'stone1' or tile_type == 'stone2' or \
+                tile_type == 'water':
             self.add(walls_group)
         elif tile_type == 'mob':
             self.add(mob_group)
@@ -80,7 +91,7 @@ def terminate():
     sys.exit()
 
 def start_screen():
-    intro_text = ["ЗАСТАВКА"]
+    intro_text = ["                Adventure of the knight"]
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (550, 550))
     screen.blit(fon, (0, 0))
@@ -123,8 +134,13 @@ clock = pygame.time.Clock()
 start_screen()
 
 
-tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass.png'),
-               'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 45))}
+tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass1.png'),
+               'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 50)),
+               'water': pygame.transform.scale(load_image('water.jpg'), (50, 50)),
+               'stone': pygame.transform.scale(load_image('stone.jpg', -1), (50, 50)),
+               'stone1': pygame.transform.scale(load_image('stone1.jpg', -1), (50, 50)),
+               'stone2': pygame.transform.scale(load_image('stone2.png', -1), (50, 50)),
+               'ground': pygame.transform.scale(load_image('ground.jpg'), (50, 50))}
 player_image = pygame.transform.scale(load_image('url1.jpg'), (40, 50))
 tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
@@ -133,7 +149,7 @@ player_group = pygame.sprite.Group()
 mob_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 
-player, level_x, level_y = generate_level(load_level('map1.txt'))
+player, level_x, level_y = generate_level(load_level('map2.txt'))
 running = True
 
 while running:
