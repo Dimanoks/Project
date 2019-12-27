@@ -2,6 +2,8 @@ import pygame, os, sys, random
 
 pygame.init()
 n = 100
+k = 0
+lvl = ['map1.txt', 'map2.txt']
 def xxp(n):
     xp = (random.randrange(3) - 1)
     if xp == 1:
@@ -48,9 +50,12 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '1':
                 Tile('mob', x, y)
+            elif level[y][x] == '!':
+                Tile('flag', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 px, py = x, y
+    print(px, py)
     new_player = Player(px, py)
     return new_player, x, y
 
@@ -64,6 +69,8 @@ class Tile(pygame.sprite.Sprite):
             self.add(walls_group)
         elif tile_type == 'mob':
             self.add(mob_group)
+        elif tile_type == 'flag':
+            self.add(flag_group)
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
@@ -123,17 +130,19 @@ clock = pygame.time.Clock()
 start_screen()
 
 
-tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass.png'),
-               'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 45))}
+tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass1.png'),
+               'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 45)),
+               'flag': pygame.transform.scale(load_image('flag.jpg', -1), (50, 45))}
 player_image = pygame.transform.scale(load_image('url1.jpg'), (40, 50))
 tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
+player_group = pygame.sprite.GroupSingle()
 mob_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
+flag_group = pygame.sprite.Group()
 
-player, level_x, level_y = generate_level(load_level('map1.txt'))
+player, level_x, level_y = generate_level(load_level(lvl[k]))
 running = True
 
 while running:
@@ -146,7 +155,7 @@ while running:
                 player.move(0, -1)
                 if pygame.sprite.spritecollide(player, walls_group, False):
                     player.move(0, 1)
-                if pygame.sprite.spritecollide(player, mob_group, False):
+                elif pygame.sprite.spritecollide(player, mob_group, False):
                     n = xxp(n)
                     if n <= 0:
                         terminate()
@@ -154,7 +163,7 @@ while running:
                 player.move(0, 1)
                 if pygame.sprite.spritecollide(player, walls_group, False):
                     player.move(0, -1)
-                if pygame.sprite.spritecollide(player, mob_group, False):
+                elif pygame.sprite.spritecollide(player, mob_group, False):
                     n = xxp(n)
                     if n <= 0:
                         terminate()
@@ -162,7 +171,7 @@ while running:
                 player.move(1, 0)
                 if pygame.sprite.spritecollide(player, walls_group ,False):
                     player.move(-1, 0)
-                if pygame.sprite.spritecollide(player, mob_group, False):
+                elif pygame.sprite.spritecollide(player, mob_group, False):
                     n = xxp(n)
                     if n <= 0:
                         terminate()
@@ -170,10 +179,16 @@ while running:
                 player.move(-1, 0)
                 if pygame.sprite.spritecollide(player, walls_group, False):
                     player.move(1, 0)
-                if pygame.sprite.spritecollide(player, mob_group, False):
+                elif pygame.sprite.spritecollide(player, mob_group, False):
                     n = xxp(n)
                     if n <= 0:
                         terminate()
+            elif pygame.sprite.spritecollide(player, flag_group, False):
+                k +=1
+                for sprite in tiles_group:
+                    sprite.kill()
+                player, level_x, level_y = generate_level(load_level(lvl[k]))
+
     camera.update(player)
     for sprite in all_sprites:
         camera.apply(sprite)
