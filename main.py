@@ -2,6 +2,7 @@ import pygame, os, sys, random
 
 pygame.init()
 n = 100
+f = 1
 k = 0
 lvl = ['map1.txt', 'map2.txt']
 def xxp(n):
@@ -82,11 +83,39 @@ class Tile(pygame.sprite.Sprite):
         elif tile_type == 'flag':
             self.add(flag_group)
 
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.image = player_image
         self.rect = self.image.get_rect().move(tile_width * pos_x + 5, tile_height * pos_y)
+
+    def update(self, *args):
+        if f == 0:
+            self.image = pygame.transform.flip(self.image, True, False)
+        elif f == 1:
+            self.image = pygame.transform.flip(self.image, True, False)
 
     def move(self, x, y):
         self.rect = self.image.get_rect().move(tile_width * x + self.rect.x, tile_height * y + self.rect.y)
@@ -139,15 +168,16 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 start_screen()
 
-tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass1.png'),
-               'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 50)),
-               'water': pygame.transform.scale(load_image('water.jpg'), (50, 50)),
+tile_images = {'wall': pygame.transform.scale(load_image('box.png'), (50, 50)),
+               'empty': pygame.transform.scale(load_image('grass1.png'), (50, 50)),
+               'mob': pygame.transform.scale(load_image('mob1_1.png', -1), (50, 50)),
+               'water': pygame.transform.scale(load_image('water.jpg', -1), (50, 50)),
                'stone': pygame.transform.scale(load_image('stone.jpg', -1), (50, 50)),
-               'stone1': pygame.transform.scale(load_image('stone1.jpg', -1), (50, 50)),
+               'stone1': load_image('stone1.jpg', -1),
                'stone2': pygame.transform.scale(load_image('stone2.png', -1), (50, 50)),
                'ground': pygame.transform.scale(load_image('ground.jpg'), (50, 50)),
-               'flag': pygame.transform.scale(load_image('flag.jpg', -1), (50, 45))}
-player_image = pygame.transform.scale(load_image('url1.jpg'), (40, 50))
+               'flag': pygame.transform.scale(load_image('flag.jpg', -1), (50, 50))}
+player_image = pygame.transform.scale(load_image('url1.jpg', -1), (40, 50))
 tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
@@ -182,19 +212,43 @@ while running:
                     if n <= 0:
                         terminate()
             if key == pygame.K_RIGHT:
-                player.move(1, 0)
-                if pygame.sprite.spritecollide(player, walls_group ,False):
+                if f != 1:
+                    player.move(1, 0)
+                    f = 1
+                    all_sprites.update(event)
+                    if pygame.sprite.spritecollide(player, walls_group, False):
+                        player.move(-1, 0)
+                    elif pygame.sprite.spritecollide(player, mob_group, False):
+                        n = xxp(n)
+                        if n <= 0:
+                            terminate()
+                else:
+                    player.move(1, 0)
+                    f = 1
+                    if pygame.sprite.spritecollide(player, walls_group ,False):
+                        player.move(-1, 0)
+                    elif pygame.sprite.spritecollide(player, mob_group, False):
+                        n = xxp(n)
+                        if n <= 0:
+                            terminate()
+            if key == pygame.K_LEFT:
+                if f != 0:
                     player.move(-1, 0)
-                elif pygame.sprite.spritecollide(player, mob_group, False):
-                    n = xxp(n)
+                    f = 0
+                    all_sprites.update(event)
+                    if pygame.sprite.spritecollide(player, walls_group, False):
+                        player.move(1, 0)
+                    elif pygame.sprite.spritecollide(player, mob_group, False):
+                        n = xxp(n)
                     if n <= 0:
                         terminate()
-            if key == pygame.K_LEFT:
-                player.move(-1, 0)
-                if pygame.sprite.spritecollide(player, walls_group, False):
-                    player.move(1, 0)
-                elif pygame.sprite.spritecollide(player, mob_group, False):
-                    n = xxp(n)
+                else:
+                    player.move(-1, 0)
+                    f = 0
+                    if pygame.sprite.spritecollide(player, walls_group, False):
+                        player.move(1, 0)
+                    elif pygame.sprite.spritecollide(player, mob_group, False):
+                        n = xxp(n)
                     if n <= 0:
                         terminate()
             elif pygame.sprite.spritecollide(player, flag_group, False):
