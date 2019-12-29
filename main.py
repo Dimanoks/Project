@@ -100,7 +100,6 @@ class Tile(pygame.sprite.Sprite):
         elif tile_type == 'potion':
             self.add(potion_group)
 
-
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
