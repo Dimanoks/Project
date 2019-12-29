@@ -121,6 +121,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * x + self.rect.x, tile_height * y + self.rect.y)
 FPS = 50
 
+
 def terminate():
     pygame.quit()
     sys.exit()
