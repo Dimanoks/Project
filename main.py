@@ -3,11 +3,21 @@ import pygame, os, sys, random
 pygame.init()
 n = 100
 k = 0
-lvl = ['map1.txt', 'map2.txt']
+l = 50
+lvl = ['map1.txt', 'map2.txt', 'map3.txt']
+
+def potion(n, l):
+    if n > 50:
+        n += (100 - n)
+    else:
+        n += 50
+    print(n)
+    return int(n)
+
 def xxp(n):
     xp = (random.randrange(3) - 1)
     if xp == 1:
-        n -= 100
+        n -= 75
         print(n)
         return int(n)
     elif xp == 0:
@@ -48,6 +58,12 @@ def generate_level(level):
                 Tile('empty', x, y)
             elif level[y][x] == '#':
                 Tile('wall', x, y)
+            elif level[y][x] == '*':
+                Tile('wall2', x, y)
+            elif level[y][x] == 'f':
+                Tile('floor', x, y)
+            elif level[y][x] == 'h':
+                Tile('potion', x, y)
             elif level[y][x] == '/':
                 Tile('water', x, y)
             elif level[y][x] == '0':
@@ -75,12 +91,15 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         if tile_type == 'wall' or tile_type == 'stone' or tile_type == 'stone1' or tile_type == 'stone2' or \
-                tile_type == 'water':
+                tile_type == 'water' or tile_type == 'wall2':
             self.add(walls_group)
         elif tile_type == 'mob':
             self.add(mob_group)
         elif tile_type == 'flag':
             self.add(flag_group)
+        elif tile_type == 'potion':
+            self.add(potion_group)
+
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
@@ -117,7 +136,7 @@ def start_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
+                return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -139,14 +158,17 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 start_screen()
 
-tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass1.png'),
+tile_images = {'wall': load_image('box.png'), 'empty': pygame.transform.scale(load_image('grass1.png'), (50, 50)),
                'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 50)),
                'water': pygame.transform.scale(load_image('water.jpg'), (50, 50)),
                'stone': pygame.transform.scale(load_image('stone.jpg', -1), (50, 50)),
                'stone1': pygame.transform.scale(load_image('stone1.jpg', -1), (50, 50)),
                'stone2': pygame.transform.scale(load_image('stone2.png', -1), (50, 50)),
                'ground': pygame.transform.scale(load_image('ground.jpg'), (50, 50)),
-               'flag': pygame.transform.scale(load_image('flag.jpg', -1), (50, 45))}
+               'flag': pygame.transform.scale(load_image('flag.jpg', -1), (50, 50)),
+               'floor': pygame.transform.scale(load_image('floor.jpg', -1), (50, 50)),
+               'wall2': pygame.transform.scale(load_image('wall2.jpeg', -1), (50, 50)),
+               'potion': pygame.transform.scale(load_image('potion.jpg', -1), (50, 50))}
 player_image = pygame.transform.scale(load_image('url1.jpg'), (40, 50))
 tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
@@ -155,6 +177,7 @@ player_group = pygame.sprite.GroupSingle()
 mob_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 flag_group = pygame.sprite.Group()
+potion_group = pygame.sprite.Group()
 
 player, level_x, level_y = generate_level(load_level(lvl[k]))
 running = True
@@ -173,6 +196,10 @@ while running:
                     n = xxp(n)
                     if n <= 0:
                         terminate()
+                elif pygame.sprite.spritecollide(player, potion_group, False):
+                    n = potion(n, l)
+                    for sprite in potion_group:
+                        sprite.kill()
             if key == pygame.K_DOWN:
                 player.move(0, 1)
                 if pygame.sprite.spritecollide(player, walls_group, False):
@@ -181,6 +208,10 @@ while running:
                     n = xxp(n)
                     if n <= 0:
                         terminate()
+                elif pygame.sprite.spritecollide(player, potion_group, False):
+                    n = potion(n, l)
+                    for sprite in potion_group:
+                        sprite.kill()
             if key == pygame.K_RIGHT:
                 player.move(1, 0)
                 if pygame.sprite.spritecollide(player, walls_group ,False):
@@ -189,6 +220,10 @@ while running:
                     n = xxp(n)
                     if n <= 0:
                         terminate()
+                elif pygame.sprite.spritecollide(player, potion_group, False):
+                    n = potion(n, l)
+                    for sprite in potion_group:
+                        sprite.kill()
             if key == pygame.K_LEFT:
                 player.move(-1, 0)
                 if pygame.sprite.spritecollide(player, walls_group, False):
@@ -197,6 +232,10 @@ while running:
                     n = xxp(n)
                     if n <= 0:
                         terminate()
+                elif pygame.sprite.spritecollide(player, potion_group, False):
+                    n = potion(n, l)
+                    for sprite in potion_group:
+                        sprite.kill()
             elif pygame.sprite.spritecollide(player, flag_group, False):
                 k +=1
                 for sprite in tiles_group:
@@ -210,6 +249,5 @@ while running:
     all_sprites.draw(screen)
 
     pygame.display.flip()
-
 
 pygame.quit()
