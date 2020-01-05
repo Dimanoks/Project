@@ -6,6 +6,7 @@ import random
 pygame.init()
 xp = 100
 k = 0
+
 a = []
 b = []
 f = 1
@@ -17,10 +18,10 @@ def damage(*args):
         for sprite in mob_group:
             sprite.kill()
 
+
 def potion(xp):
     if xp > 50:
         xp += (100 - xp)
-    else:
         xp += 50
     print(xp)
     return int(xp)
