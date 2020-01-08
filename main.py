@@ -6,6 +6,13 @@ k = 0
 l = 50
 lvl = ['map1.txt', 'map2.txt', 'map3.txt']
 
+
+def lava(n):
+    n = 0
+    print(n)
+    return int(n)
+
+
 def potion(n, l):
     if n > 50:
         n += (100 - n)
@@ -13,6 +20,7 @@ def potion(n, l):
         n += 50
     print(n)
     return int(n)
+
 
 def xxp(n):
     xp = (random.randrange(3) - 1)
@@ -62,10 +70,14 @@ def generate_level(level):
                 Tile('wall2', x, y)
             elif level[y][x] == 'f':
                 Tile('floor', x, y)
+            elif level[y][x] == 'L':
+                Tile('lava', x, y)
             elif level[y][x] == 'h':
                 Tile('potion', x, y)
             elif level[y][x] == '/':
                 Tile('water', x, y)
+            elif level[y][x] == '%':
+                Tile('tree', x, y)
             elif level[y][x] == '0':
                 Tile('stone', x, y)
             elif level[y][x] == '2':
@@ -91,7 +103,7 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         if tile_type == 'wall' or tile_type == 'stone' or tile_type == 'stone1' or tile_type == 'stone2' or \
-                tile_type == 'water' or tile_type == 'wall2':
+                tile_type == 'water' or tile_type == 'wall2' or tile_type == 'tree':
             self.add(walls_group)
         elif tile_type == 'mob':
             self.add(mob_group)
@@ -99,6 +111,8 @@ class Tile(pygame.sprite.Sprite):
             self.add(flag_group)
         elif tile_type == 'potion':
             self.add(potion_group)
+        elif tile_type == 'lava':
+            self.add(lava_group)
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
@@ -115,14 +129,14 @@ def terminate():
     sys.exit()
 
 def start_screen():
-    intro_text = ["                Adventure of the knight"]
+    intro_text = ["     Adventure of the knight"]
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (550, 550))
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
+    font = pygame.font.Font(None, 37)
+    text_coord = 30
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, pygame.Color(10, 20, 90))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -157,7 +171,8 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 start_screen()
 
-tile_images = {'wall': load_image('box.png'), 'empty': pygame.transform.scale(load_image('grass1.png'), (50, 50)),
+tile_images = {'wall': pygame.transform.scale(load_image('wall.jpg', -1), (50, 50)),
+               'empty': pygame.transform.scale(load_image('grass1.png'), (50, 50)),
                'mob': pygame.transform.scale(load_image('mob1_1.png'), (50, 50)),
                'water': pygame.transform.scale(load_image('water.jpg'), (50, 50)),
                'stone': pygame.transform.scale(load_image('stone.jpg', -1), (50, 50)),
@@ -167,7 +182,9 @@ tile_images = {'wall': load_image('box.png'), 'empty': pygame.transform.scale(lo
                'flag': pygame.transform.scale(load_image('flag.jpg', -1), (50, 50)),
                'floor': pygame.transform.scale(load_image('floor.jpg', -1), (50, 50)),
                'wall2': pygame.transform.scale(load_image('wall2.jpeg', -1), (50, 50)),
-               'potion': pygame.transform.scale(load_image('potion.jpg', -1), (50, 50))}
+               'tree': pygame.transform.scale(load_image('tree.png', -1), (50, 50)),
+               'potion': pygame.transform.scale(load_image('potion.jpg', -1), (50, 50)),
+               'lava': pygame.transform.scale(load_image('lava.png', -1), (50, 50))}
 player_image = pygame.transform.scale(load_image('url1.jpg'), (40, 50))
 tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
@@ -177,6 +194,7 @@ mob_group = pygame.sprite.Group()
 walls_group = pygame.sprite.Group()
 flag_group = pygame.sprite.Group()
 potion_group = pygame.sprite.Group()
+lava_group = pygame.sprite.Group()
 
 player, level_x, level_y = generate_level(load_level(lvl[k]))
 running = True
@@ -199,6 +217,9 @@ while running:
                     n = potion(n, l)
                     for sprite in potion_group:
                         sprite.kill()
+                elif pygame.sprite.spritecollide(player, lava_group, False):
+                    n = lava(n)
+                    terminate()
             if key == pygame.K_DOWN:
                 player.move(0, 1)
                 if pygame.sprite.spritecollide(player, walls_group, False):
@@ -211,6 +232,9 @@ while running:
                     n = potion(n, l)
                     for sprite in potion_group:
                         sprite.kill()
+                elif pygame.sprite.spritecollide(player, lava_group, False):
+                    n = lava(n)
+                    terminate()
             if key == pygame.K_RIGHT:
                 player.move(1, 0)
                 if pygame.sprite.spritecollide(player, walls_group ,False):
@@ -223,6 +247,9 @@ while running:
                     n = potion(n, l)
                     for sprite in potion_group:
                         sprite.kill()
+                elif pygame.sprite.spritecollide(player, lava_group, False):
+                    n = lava(n)
+                    terminate()
             if key == pygame.K_LEFT:
                 player.move(-1, 0)
                 if pygame.sprite.spritecollide(player, walls_group, False):
@@ -235,6 +262,9 @@ while running:
                     n = potion(n, l)
                     for sprite in potion_group:
                         sprite.kill()
+                elif pygame.sprite.spritecollide(player, lava_group, False):
+                    n = lava(n)
+                    terminate()
             elif pygame.sprite.spritecollide(player, flag_group, False):
                 k +=1
                 for sprite in tiles_group:
@@ -244,7 +274,7 @@ while running:
     camera.update(player)
     for sprite in all_sprites:
         camera.apply(sprite)
-    screen.fill(pygame.Color("white"))
+    screen.fill(pygame.Color(123, 123, 123))
     all_sprites.draw(screen)
 
     pygame.display.flip()
