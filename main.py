@@ -8,6 +8,9 @@ pygame.init()
 xp = 100
 screen_rect = (0, 0, 550, 550)
 k = 0
+
+a = []
+b = []
 f = 1
 lvl = ['map1.txt', 'map2.txt', 'map3.txt']
 
@@ -34,6 +37,7 @@ def potion(xp):
         xp += (100 - xp)
     else:
         xp += 50
+    print(xp)
     return int(xp)
 
 
@@ -41,12 +45,15 @@ def xxp(xp):
     n = (random.randrange(3) - 1)
     if n == 1:
         xp -= 75
+        print(xp)
         return int(xp)
     elif n == 0:
         xp -= 50
+        print(xp)
         return int(xp)
     else:
         xp -= 25
+        print(xp)
         return int(xp)
 
 
