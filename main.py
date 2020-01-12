@@ -9,6 +9,7 @@ pygame.init()
 mixer.pre_init(44100, -16, 1, 512)
 mixer.pre_init(44100, -16, 2, 512)
 mixer.init()
+soundb = mixer.Sound('data/background music.ogg')
 size = width, height = 550, 550
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
@@ -28,9 +29,11 @@ def damage(args):
                      sprite.rect.collidepoint(x - 50, y - 50) or sprite.rect.collidepoint(x + 50, y + 50) or
                      sprite.rect.collidepoint(x - 50, y + 50) or sprite.rect.collidepoint(x + 50, y - 50) or
                      sprite.rect.collidepoint(x, y)):
+                # AnimatedSprite(pygame.transform.scale(load_image('url.jpg', -1), (200, 50)), 4, 1, x-25, y-25)
                 sound = mixer.Sound('data/impact by sword.ogg')
                 sound.play(0)
                 sprite.kill()
+                create_particles(pygame.mouse.get_pos())
             else:
                 sound = mixer.Sound('data/a wave of the sword.ogg')
                 sound.play(0)
@@ -79,6 +82,13 @@ def load_image(name, color_key=None):
     else:
         image = image.convert_alpha()
     return image
+
+
+
+class Panel:
+    def __init__(self):
+        font = pygame.font.Font(None, 24)
+
 
 
 def load_level(filename):
@@ -146,27 +156,27 @@ class Tile(pygame.sprite.Sprite):
             self.add(lava_group)
 
 
-# class AnimatedSprite(pygame.sprite.Sprite):
-#     def __init__(self, sheet, columns, rows, x, y):
-#         super().__init__(all_sprites)
-#         self.frames = []
-#         self.cut_sheet(sheet, columns, rows)
-#         self.cur_frame = 0
-#         self.image = self.frames[self.cur_frame]
-#         self.rect = self.rect.move(x, y)
-#
-#     def cut_sheet(self, sheet, columns, rows):
-#         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-#                                 sheet.get_height() // rows)
-#         for j in range(rows):
-#             for i in range(columns):
-#                 frame_location = (self.rect.w * i, self.rect.h * j)
-#                 self.frames.append(sheet.subsurface(pygame.Rect(
-#                     frame_location, self.rect.size)))
-#
-#     def update(self):
-#         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-#         self.image = self.frames[self.cur_frame]
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(player_group_hit)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Player(pygame.sprite.Sprite):
@@ -188,39 +198,41 @@ class Player(pygame.sprite.Sprite):
 FPS = 50
 
 
-# class Particle(pygame.sprite.Sprite):
-#     fire = [load_image("star.png", -1)]
-#     for scale in (5, 10, 20):
-#         fire.append(pygame.transform.scale(fire[0], (scale, scale)))
-#
-#     def __init__(self, pos, dx, dy):
-#         super().__init__(particle_group)
-#         self.image = random.choice(self.fire)
-#         self.rect = self.image.get_rect()
-#         self.velocity = [dx, dy]
-#         self.rect.x, self.rect.y = pos
-#         self.gravity = 0.5
-#
-#     def update(self):
-#         self.velocity[1] += self.gravity
-#         self.rect.x += self.velocity[0]
-#         self.rect.y += self.velocity[1]
-#         if not self.rect.colliderect(0, 0, 550, 550):
-#             self.kill()
-#
-#
-# def create_particles(position):
-#     particle_count = 20
-#     numbers = range(-5, 6)
-#     for _ in range(particle_count):
-#         Particle(position, random.choice(numbers), random.choice(numbers))
+class Particle(pygame.sprite.Sprite):
+    fire = [(pygame.transform.scale(load_image('blood.jpg', -1), (10, 10)))]
+    for scale in (10, 10):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(particle_group)
+        self.kol = 0
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.gravity = 0.5
+
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        self.kol += 8
+        if self.kol >= 50:
+            self.kill()
+
+
+def create_particles(position):
+    particle_count = 20
+    numbers = range(-5, 6)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
 
 
 def terminate():
     fon2 = pygame.transform.scale(load_image('go.jpg'), (550, 550))
     screen.blit(fon2, (0, 0))
     pygame.display.flip()
-    pygame.mixer.Channel(2).unpause()
+    pygame.mixer.Sound.set_volume(soundb, 0)
     time.sleep(0.5)
     sound = mixer.Sound('data/end game.ogg')
     sound.play(0)
@@ -257,10 +269,7 @@ def start_screen():
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 pygame.mixer.Sound.set_volume(soundS, 0)
                 pygame.mixer.Channel(2)
-                soundb = mixer.Sound('data/background music.ogg')
-                free_channel = pygame.mixer.find_channel(2)
-                free_channel.play(soundb)
-                pygame.mixer.Channel(2).pause()
+                soundb.play(-1)
                 return
         pygame.display.flip()
         clock.tick(FPS)
@@ -308,6 +317,7 @@ flag_group = pygame.sprite.Group()
 potion_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
+player_group_hit = pygame.sprite.Group()
 
 player, level_x, level_y = generate_level(load_level(lvl[k]))
 running = True
@@ -418,10 +428,8 @@ while running:
                     sprite.kill()
                 player, level_x, level_y = generate_level(load_level(lvl[k]))
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # create_particles(pygame.mouse.get_pos())
             damage(pygame.mouse.get_pos())
-            # particle_group.update()
-            # particle_group.draw(screen)
+
     camera.update(player)
     for sprite in all_sprites:
         camera.apply(sprite)
@@ -433,6 +441,10 @@ while running:
         fon1 = pygame.transform.scale(load_image('grass.png'), (550, 550))
         screen.blit(fon1, (0, 0))
         font = pygame.font.Font(None, 30)
+    particle_group.update()
+    particle_group.draw(screen)
+    player_group_hit.update()
+    player_group_hit.draw(screen)
     all_sprites.draw(screen)
     pygame.display.flip()
 
