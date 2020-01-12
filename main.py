@@ -10,12 +10,21 @@ mixer.pre_init(44100, -16, 1, 512)
 mixer.pre_init(44100, -16, 2, 512)
 mixer.init()
 soundb = mixer.Sound('data/background music.ogg')
+soundis = mixer.Sound('data/impact by sword.ogg')
+soundws = mixer.Sound('data/a wave of the sword.ogg')
+soundeg = mixer.Sound('data/end game.ogg')
+soundgo = mixer.Sound('data/game over.ogg')
+soundm = mixer.Sound('data/monster.ogg')
+soundrl = mixer.Sound('data/restart the level.ogg')
+soundnl = mixer.Sound('data/The sound of going to the next level.ogg')
+sounddp = mixer.Sound('data/drinking a potion.ogg')
 size = width, height = 550, 550
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 xp = 100
-k = 0
-f = 1
+level_number = 0
+turn = 1
+flag = 1
 lvl = ['map1.txt', 'map2.txt', 'map3.txt']
 
 
@@ -29,30 +38,26 @@ def damage(args):
                      sprite.rect.collidepoint(x - 50, y - 50) or sprite.rect.collidepoint(x + 50, y + 50) or
                      sprite.rect.collidepoint(x - 50, y + 50) or sprite.rect.collidepoint(x + 50, y - 50) or
                      sprite.rect.collidepoint(x, y)):
-                # AnimatedSprite(pygame.transform.scale(load_image('url.jpg', -1), (200, 50)), 4, 1, x-25, y-25)
-                sound = mixer.Sound('data/impact by sword.ogg')
-                sound.play(0)
+                soundis.play(0)
                 sprite.kill()
                 create_particles(pygame.mouse.get_pos())
             else:
-                sound = mixer.Sound('data/a wave of the sword.ogg')
-                sound.play(0)
+                soundws.play(0)
 
 
 def lava(xp):
     xp = 0
+    panel(str(xp), 40, 40, 35)
     return int(xp)
 
 
 def potion(xp):
-    sound = mixer.Sound('data/drinking a potion.ogg')
-    sound.play(0)
+    sounddp.play(0)
     if xp > 50:
         xp += (100 - xp)
-        print(xp)
     else:
         xp += 50
-        print(xp)
+    panel(str(xp), 40, 40, 35)
     return int(xp)
 
 
@@ -60,15 +65,15 @@ def xxp(xp):
     n = (random.randrange(3) - 1)
     if n == 1:
         xp -= 75
-        print(xp)
+        panel(str(xp), 40, 40, 35)
         return int(xp)
     elif n == 0:
         xp -= 50
-        print(xp)
+        panel(str(xp), 40, 40, 35)
         return int(xp)
     else:
         xp -= 25
-        print(xp)
+        panel(str(xp), 40, 40, 35)
         return int(xp)
 
 
@@ -84,11 +89,11 @@ def load_image(name, color_key=None):
     return image
 
 
-
-class Panel:
-    def __init__(self):
-        font = pygame.font.Font(None, 24)
-
+def panel(mes, x, y, font_size, font_color=(255, 255, 255), font_type='data/font.ttf'):
+    font_size = int(font_size)
+    font_type = pygame.font.Font(font_type, font_size)
+    text = font_type.render(mes, True, font_color)
+    screen.blit(text, (x, y))
 
 
 def load_level(filename):
@@ -100,7 +105,7 @@ def load_level(filename):
 
 
 def generate_level(level):
-    new_player, x, y = None, None, None
+    new_player, x, y, a = None, None, None, []
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -128,14 +133,14 @@ def generate_level(level):
             elif level[y][x] == 'g':
                 Tile('ground', x, y)
             elif level[y][x] == '1':
-                Tile('mob', x, y)
+                a.append([x, y])
             elif level[y][x] == '!':
                 Tile('flag', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 px, py = x, y
                 new_player = Player(px, py)
-    return new_player, x, y
+    return new_player, x, y, a
 
 
 class Tile(pygame.sprite.Sprite):
@@ -158,11 +163,13 @@ class Tile(pygame.sprite.Sprite):
 
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
-        super().__init__(player_group_hit)
+        super().__init__(mob_group)
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
+        y = tile_height * y - 10
+        x = tile_width * x
         self.rect = self.rect.move(x, y)
 
     def cut_sheet(self, sheet, columns, rows):
@@ -186,9 +193,9 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x + 5, tile_height * pos_y)
 
     def update(self, *args):
-        if f == 0:
+        if turn == 0:
             self.image = pygame.transform.flip(self.image, True, False)
-        elif f == 1:
+        elif turn == 1:
             self.image = pygame.transform.flip(self.image, True, False)
 
     def move(self, x, y):
@@ -234,23 +241,20 @@ def terminate():
     pygame.display.flip()
     pygame.mixer.Sound.set_volume(soundb, 0)
     time.sleep(0.5)
-    sound = mixer.Sound('data/end game.ogg')
-    sound.play(0)
+    soundeg.play(0)
     time.sleep(1.5)
-    sound1 = mixer.Sound('data/game over.ogg')
-    sound1.play(0)
+    soundgo.play(0)
     time.sleep(2)
     pygame.quit()
     sys.exit()
 
 
 def start_screen():
-    intro_text = ["     Adventure of the knight"]
-
-    fon = pygame.transform.scale(load_image('fon.jpg'), (550, 550))
+    intro_text = [""]
+    fon = pygame.transform.scale(load_image('fon.png'), (550, 550))
     screen.blit(fon, (0, 0))
-    soundS = mixer.Sound('data/monster.ogg')
-    soundS.play(0)
+    panel('Нажмите для продолжения', 60, 500, 50)
+    soundm.play(0)
     font = pygame.font.Font(None, 37)
     text_coord = 30
     for line in intro_text:
@@ -267,7 +271,7 @@ def start_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                pygame.mixer.Sound.set_volume(soundS, 0)
+                pygame.mixer.Sound.set_volume(soundm, 0)
                 pygame.mixer.Channel(2)
                 soundb.play(-1)
                 return
@@ -289,12 +293,11 @@ class Camera:
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
 
 
-camera = Camera()
 start_screen()
+camera = Camera()
 
 tile_images = {'wall': pygame.transform.scale(load_image('wall.jpg', -1), (50, 50)),
                'empty': pygame.transform.scale(load_image('ff.jpg', -1), (50, 50)),
-               'mob': pygame.transform.scale(load_image('mob1_1.png', -1), (50, 50)),
                'water': pygame.transform.scale(load_image('water.jpg'), (50, 50)),
                'stone': pygame.transform.scale(load_image('stone.jpg', -1), (50, 50)),
                'stone1': pygame.transform.scale(load_image('stone1.jpg', -1), (50, 50)),
@@ -317,9 +320,10 @@ flag_group = pygame.sprite.Group()
 potion_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
-player_group_hit = pygame.sprite.Group()
 
-player, level_x, level_y = generate_level(load_level(lvl[k]))
+player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+for i in a:
+    mob = AnimatedSprite(load_image('mob1.png', -1), 15, 1, i[0], i[1])
 running = True
 
 while running:
@@ -328,7 +332,7 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN:
             key = event.key
-            if key == pygame.K_UP:
+            if key == pygame.K_w:
                 player.move(0, -1)
                 if pygame.sprite.spritecollide(player, walls_group, False):
                     player.move(0, 1)
@@ -343,7 +347,7 @@ while running:
                 elif pygame.sprite.spritecollide(player, lava_group, False):
                     xp = lava(xp)
                     terminate()
-            if key == pygame.K_DOWN:
+            if key == pygame.K_s:
                 player.move(0, 1)
                 if pygame.sprite.spritecollide(player, walls_group, False):
                     player.move(0, -1)
@@ -358,10 +362,10 @@ while running:
                 elif pygame.sprite.spritecollide(player, lava_group, False):
                     xp = lava(xp)
                     terminate()
-            if key == pygame.K_RIGHT:
-                if f != 1:
+            if key == pygame.K_d:
+                if turn != 1:
                     player.move(1, 0)
-                    f = 1
+                    turn = 1
                     all_sprites.update(event)
                     if pygame.sprite.spritecollide(player, walls_group, False):
                         player.move(-1, 0)
@@ -378,7 +382,7 @@ while running:
                         terminate()
                 else:
                     player.move(1, 0)
-                    f = 1
+                    turn = 1
                     if pygame.sprite.spritecollide(player, walls_group, False):
                         player.move(-1, 0)
                     elif pygame.sprite.spritecollide(player, mob_group, False):
@@ -388,10 +392,10 @@ while running:
                     elif pygame.sprite.spritecollide(player, lava_group, False):
                         xp = lava(xp)
                         terminate()
-            if key == pygame.K_LEFT:
-                if f != 0:
+            if key == pygame.K_a:
+                if turn != 0:
                     player.move(-1, 0)
-                    f = 0
+                    turn = 0
                     all_sprites.update(event)
                     if pygame.sprite.spritecollide(player, walls_group, False):
                         player.move(1, 0)
@@ -404,7 +408,7 @@ while running:
                         terminate()
                 else:
                     player.move(-1, 0)
-                    f = 0
+                    turn = 0
                     if pygame.sprite.spritecollide(player, walls_group, False):
                         player.move(1, 0)
                     elif pygame.sprite.spritecollide(player, mob_group, False):
@@ -418,22 +422,50 @@ while running:
                     elif pygame.sprite.spritecollide(player, lava_group, False):
                         xp = lava(xp)
                         terminate()
-            elif pygame.sprite.spritecollide(player, flag_group, False):
-                k += 1
-                sound = mixer.Sound('data/The sound of going to the next level.ogg')
-                sound.play(0)
+            elif key == pygame.K_r:
+                xp = 100
+                soundrl.play(0)
                 for sprite in tiles_group:
                     sprite.kill()
                 for sprite in player_group:
                     sprite.kill()
-                player, level_x, level_y = generate_level(load_level(lvl[k]))
+                player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+            elif pygame.sprite.spritecollide(player, flag_group, False):
+                level_number += 1
+                soundnl.play(0)
+                for sprite in tiles_group:
+                    sprite.kill()
+                for sprite in player_group:
+                    sprite.kill()
+                player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+            if key == pygame.K_p:
+                if flag:
+                    pygame.mixer.Sound.set_volume(soundb, 0)
+                    pygame.mixer.Sound.set_volume(soundis, 0)
+                    pygame.mixer.Sound.set_volume(soundws, 0)
+                    pygame.mixer.Sound.set_volume(soundeg, 0)
+                    pygame.mixer.Sound.set_volume(soundgo, 0)
+                    pygame.mixer.Sound.set_volume(soundm, 0)
+                    pygame.mixer.Sound.set_volume(soundrl, 0)
+                    pygame.mixer.Sound.set_volume(soundnl, 0)
+                    pygame.mixer.Sound.set_volume(sounddp, 0)
+                    flag = 0
+                else:
+                    pygame.mixer.Sound.set_volume(soundb, 0.5)
+                    pygame.mixer.Sound.set_volume(soundis, 1)
+                    pygame.mixer.Sound.set_volume(soundws, 1)
+                    pygame.mixer.Sound.set_volume(soundeg, 1)
+                    pygame.mixer.Sound.set_volume(soundgo, 1)
+                    pygame.mixer.Sound.set_volume(soundrl, 1)
+                    pygame.mixer.Sound.set_volume(soundnl, 1)
+                    pygame.mixer.Sound.set_volume(sounddp, 1)
+                    flag = 1
         if event.type == pygame.MOUSEBUTTONDOWN:
             damage(pygame.mouse.get_pos())
-
     camera.update(player)
     for sprite in all_sprites:
         camera.apply(sprite)
-    if k == 2:
+    if level_number == 2:
         fon1 = pygame.transform.scale(load_image('floor.jpg'), (550, 550))
         screen.blit(fon1, (0, 0))
         font = pygame.font.Font(None, 30)
@@ -443,9 +475,10 @@ while running:
         font = pygame.font.Font(None, 30)
     particle_group.update()
     particle_group.draw(screen)
-    player_group_hit.update()
-    player_group_hit.draw(screen)
+    mob_group.update()
+    mob_group.draw(screen)
     all_sprites.draw(screen)
+    panel(str(xp), 40, 40, 35)
     pygame.display.flip()
 
 pygame.quit()
