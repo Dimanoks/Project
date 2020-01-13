@@ -345,6 +345,7 @@ lava_group = pygame.sprite.Group()
 chest_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
 princess_group = pygame.sprite.Group()
+
 start_screen()
 camera = Camera()
 
