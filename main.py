@@ -27,8 +27,8 @@ clock = pygame.time.Clock()
 xp = 100
 level_number = 0
 turn = 1
-flag = 1
 point = 0
+flag = 1
 lvl = ['map1.txt', 'map2.txt', 'map3.txt', 'map4.txt']
 
 
@@ -51,7 +51,8 @@ def damage(args):
 
 def lava(xp):
     xp = 0
-    panel(str(xp), 40, 40, 35)
+    panel('Здоровье:', 20, 40, 35)
+    panel(str(xp), 135, 40, 35)
     return int(xp)
 
 
@@ -61,7 +62,8 @@ def potion(xp):
         xp += (100 - xp)
     else:
         xp += 50
-    panel(str(xp), 40, 40, 35)
+    panel('Здоровье:', 20, 40, 35)
+    panel(str(xp), 135, 40, 35)
     return int(xp)
 
 
@@ -69,16 +71,13 @@ def xxp(xp):
     n = (random.randrange(3) - 1)
     if n == 1:
         xp -= 75
-        panel(str(xp), 40, 40, 35)
-        return int(xp)
     elif n == 0:
         xp -= 50
-        panel(str(xp), 40, 40, 35)
-        return int(xp)
     else:
         xp -= 25
-        panel(str(xp), 40, 40, 35)
-        return int(xp)
+    panel('Здоровье:', 20, 40, 35)
+    panel(str(xp), 135, 40, 35)
+    return int(xp)
 
 
 def load_image(name, color_key=None):
@@ -180,7 +179,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
-        y = tile_height * y - 10
+        y = tile_height * y
         x = tile_width * x
         self.rect = self.rect.move(x, y)
 
@@ -277,6 +276,8 @@ def start_screen():
     fon = pygame.transform.scale(load_image('fon.png'), (550, 550))
     screen.blit(fon, (0, 0))
     panel('Нажмите для продолжения', 60, 500, 50)
+    panel('* Во время игрынажмите "1" для', 95, 450, 35)
+    panel('включения/выключения звука', 125, 475, 35)
     soundm.play(0)
     font = pygame.font.Font(None, 37)
     text_coord = 30
@@ -316,9 +317,6 @@ class Camera:
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
 
 
-start_screen()
-camera = Camera()
-
 tile_images = {'wall': pygame.transform.scale(load_image('wall.jpg', -1), (50, 50)),
                'empty': pygame.transform.scale(load_image('ff.jpg', -1), (50, 50)),
                'water': pygame.transform.scale(load_image('water.jpg'), (50, 50)),
@@ -344,13 +342,16 @@ walls_group = pygame.sprite.Group()
 flag_group = pygame.sprite.Group()
 potion_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
+chest_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
 princess_group = pygame.sprite.Group()
-chest_group = pygame.sprite.Group()
+
+start_screen()
+camera = Camera()
 
 player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
 for i in a:
-    mob = AnimatedSprite(load_image('mob1.png', -1), 15, 1, i[0], i[1])
+    mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1), (750, 50)), 15, 1, i[0], i[1])
 running = True
 
 while running:
@@ -497,28 +498,6 @@ while running:
                         for sprite in player_group:
                             sprite.kill()
                         good_end()
-            elif key == pygame.K_r:
-                xp = 100
-                soundrl.play(0)
-                for sprite in tiles_group:
-                    sprite.kill()
-                for sprite in player_group:
-                    sprite.kill()
-                player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
-            elif pygame.sprite.spritecollide(player, flag_group, False):
-                if not mob_group:
-                    point += 100
-                    panel('Очки:', 20, 75, 35)
-                    panel(str(point), 75, 75, 35)
-                    level_number += 1
-                    if level_number == 5:
-                        break
-                else:
-                    soundnl.play(0)
-                    for sprite in mob_group:
-                        sprite.kill()
-                    for sprite in tiles_group:
-                        sprite.kill()
             elif pygame.sprite.spritecollide(player, chest_group, False):
                 soundco.play(0)
                 point += 50
@@ -526,50 +505,88 @@ while running:
                 panel(str(point), 75, 75, 35)
                 for sprite in chest_group:
                     sprite.kill()
+            elif key == pygame.K_r:
+                xp = 100
+                soundrl.play(0)
+                for sprite in mob_group:
+                    sprite.kill()
+                for sprite in tiles_group:
+                    sprite.kill()
                 for sprite in player_group:
                     sprite.kill()
-            player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
-        if key == pygame.K_p:
-            if flag:
-                pygame.mixer.Sound.set_volume(soundb, 0)
-                pygame.mixer.Sound.set_volume(soundis, 0)
-                pygame.mixer.Sound.set_volume(soundws, 0)
-                pygame.mixer.Sound.set_volume(soundeg, 0)
-                pygame.mixer.Sound.set_volume(soundgo, 0)
-                pygame.mixer.Sound.set_volume(soundm, 0)
-                pygame.mixer.Sound.set_volume(soundrl, 0)
-                pygame.mixer.Sound.set_volume(soundnl, 0)
-                pygame.mixer.Sound.set_volume(sounddp, 0)
-                flag = 0
-            else:
-                pygame.mixer.Sound.set_volume(soundb, 0.5)
-                pygame.mixer.Sound.set_volume(soundis, 1)
-                pygame.mixer.Sound.set_volume(soundws, 1)
-                pygame.mixer.Sound.set_volume(soundeg, 1)
-                pygame.mixer.Sound.set_volume(soundgo, 1)
-                pygame.mixer.Sound.set_volume(soundrl, 1)
-                pygame.mixer.Sound.set_volume(soundnl, 1)
-                pygame.mixer.Sound.set_volume(sounddp, 1)
-                flag = 1
-    if event.type == pygame.MOUSEBUTTONDOWN:
-        damage(pygame.mouse.get_pos())
-camera.update(player)
-for sprite in all_sprites:
-    camera.apply(sprite)
-if level_number == 2 or level_number == 3:
-    fon1 = pygame.transform.scale(load_image('floor.jpg'), (550, 550))
-    screen.blit(fon1, (0, 0))
-    font = pygame.font.Font(None, 30)
-else:
-    fon1 = pygame.transform.scale(load_image('grass.png'), (550, 550))
-    screen.blit(fon1, (0, 0))
-    font = pygame.font.Font(None, 30)
-particle_group.update()
-particle_group.draw(screen)
-mob_group.update()
-mob_group.draw(screen)
-all_sprites.draw(screen)
-panel(str(xp), 40, 40, 35)
-pygame.display.flip()
+                player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+                for i in a:
+                    mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
+                                                                (750, 50)), 15, 1, i[0], i[1])
+            elif pygame.sprite.spritecollide(player, flag_group, False):
+                if not mob_group:
+                    point += 100
+                    panel('Очки:', 20, 75, 35)
+                    panel(str(point), 75, 75, 35)
+                level_number += 1
+                soundnl.play(0)
+                for sprite in mob_group:
+                    sprite.kill()
+                for sprite in tiles_group:
+                    sprite.kill()
+                for sprite in player_group:
+                    sprite.kill()
+                player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+                for i in a:
+                    mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1), (750, 50)),
+                                         15, 1, i[0], i[1])
+            if key == pygame.K_1:
+                if flag:
+                    pygame.mixer.Sound.set_volume(soundb, 0)
+                    pygame.mixer.Sound.set_volume(soundis, 0)
+                    pygame.mixer.Sound.set_volume(soundws, 0)
+                    pygame.mixer.Sound.set_volume(soundeg, 0)
+                    pygame.mixer.Sound.set_volume(soundgo, 0)
+                    pygame.mixer.Sound.set_volume(soundm, 0)
+                    pygame.mixer.Sound.set_volume(soundrl, 0)
+                    pygame.mixer.Sound.set_volume(soundnl, 0)
+                    pygame.mixer.Sound.set_volume(soundco, 0)
+                    pygame.mixer.Sound.set_volume(sounddp, 0)
+                    flag = 0
+                else:
+                    pygame.mixer.Sound.set_volume(soundb, 0.5)
+                    pygame.mixer.Sound.set_volume(soundis, 1)
+                    pygame.mixer.Sound.set_volume(soundws, 1)
+                    pygame.mixer.Sound.set_volume(soundeg, 1)
+                    pygame.mixer.Sound.set_volume(soundgo, 1)
+                    pygame.mixer.Sound.set_volume(soundrl, 1)
+                    pygame.mixer.Sound.set_volume(soundco, 1)
+                    pygame.mixer.Sound.set_volume(soundnl, 1)
+                    pygame.mixer.Sound.set_volume(sounddp, 1)
+                    flag = 1
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            damage(pygame.mouse.get_pos())
+    camera.update(player)
+    for sprite in all_sprites:
+        camera.apply(sprite)
+    for sprite in mob_group:
+        camera.apply(sprite)
+    if level_number == 2 or level_number == 3:
+        fon1 = pygame.transform.scale(load_image('floor.jpg'), (550, 550))
+        screen.blit(fon1, (0, 0))
+        font = pygame.font.Font(None, 30)
+    else:
+        fon1 = pygame.transform.scale(load_image('grass.png'), (550, 550))
+        screen.blit(fon1, (0, 0))
+        font = pygame.font.Font(None, 30)
+    particle_group.update()
+    particle_group.draw(screen)
+    mob_group.update()
+    mob_group.draw(screen)
+    all_sprites.draw(screen)
+    panel('Здоровье:', 20, 40, 35)
+    panel(str(xp), 135, 40, 35)
+    panel('Очки:', 20, 75, 35)
+    panel(str(point), 75, 75, 35)
+    if flag:
+        panel('Звук включен', 395, 0, 35)
+    elif not flag:
+        panel('Звук выключен', 395, 0, 35)
+    pygame.display.flip()
 
 pygame.quit()
