@@ -25,6 +25,7 @@ size = width, height = 550, 550
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 xp = 100
+rel = 0
 level_number = 0
 turn = 1
 point = 0
@@ -211,6 +212,7 @@ class Player(pygame.sprite.Sprite):
 
     def move(self, x, y):
         self.rect = self.image.get_rect().move(tile_width * x + self.rect.x, tile_height * y + self.rect.y)
+        print(self.rect)
 
 
 FPS = 50
@@ -239,6 +241,32 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
 
 
+def reload():
+    global player, level_x, level_y, a, xp, key, mob
+    xp = 100
+    soundrl.play(0)
+    for sprite in mob_group:
+        sprite.kill()
+    for sprite in tiles_group:
+        sprite.kill()
+    for sprite in player_group:
+        sprite.kill()
+    key = False, False, False, []
+    player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+    for i in a:
+        AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
+                                              (750, 50)), 15, 1, i[0], i[1])
+
+
+def draw(text, x, y, w, h):
+    font = pygame.font.Font(None, 35)
+    text = font.render(text, 1, (255, 145, 118))
+    text_x = x + 5
+    text_y = y + 5
+    screen.blit(text, (text_x, text_y))
+    pygame.draw.rect(screen, (255, 145, 118), (x, y, w, h), 1)
+
+
 def create_particles(position):
     particle_count = 20
     numbers = range(-5, 6)
@@ -246,7 +274,7 @@ def create_particles(position):
         Particle(position, random.choice(numbers), random.choice(numbers))
 
 
-def terminate():
+def death():
     fon2 = pygame.transform.scale(load_image('go.jpg'), (550, 550))
     screen.blit(fon2, (0, 0))
     pygame.display.flip()
@@ -256,6 +284,16 @@ def terminate():
     time.sleep(1.5)
     soundgo.play(0)
     time.sleep(2)
+    for sprite in mob_group:
+        sprite.kill()
+    for sprite in tiles_group:
+        sprite.kill()
+    for sprite in player_group:
+        sprite.kill()
+    start_screen()
+
+
+def terminate():
     pygame.quit()
     sys.exit()
 
@@ -271,13 +309,68 @@ def good_end():
     sys.exit()
 
 
+def pause():
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    paused = False
+
+
+def rules():
+    intro_text = ["Я не знаю что писать, напишу хоть что-то"]
+    fon1 = pygame.transform.scale(load_image('fon.png'), (550, 550))
+    screen.blit(fon1, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 30
+    x1 = 10
+    y1 = 10
+    w1 = 100
+    h1 = 30
+    draw('Выход', x1, y1, w1, h1)
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color(10, 20, 90))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if (x >= x1) and (x <= x1 + w1) and (y >= y1) and (y <= y1 + h1):
+                    start_screen()
+                    return
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 def start_screen():
     intro_text = [""]
     fon = pygame.transform.scale(load_image('fon.png'), (550, 550))
     screen.blit(fon, (0, 0))
-    panel('Нажмите для продолжения', 60, 500, 50)
-    panel('* Во время игрынажмите "1" для', 95, 450, 35)
-    panel('включения/выключения звука', 125, 475, 35)
+    x1 = 25
+    y1 = 520
+    w1 = 100
+    h1 = 30
+    draw('Играть', x1, y1, w1, h1)
+    x2 = 150
+    y2 = 520
+    w2 = 125
+    h2 = 30
+    draw('Правила', x2, y2, w2, h2)
+    x3 = 350
+    y3 = 520
+    w3 = 125
+    h3 = 30
+    draw('Выход', x3, y3, w3, h3)
     soundm.play(0)
     font = pygame.font.Font(None, 37)
     text_coord = 30
@@ -294,11 +387,26 @@ def start_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                pygame.mixer.Sound.set_volume(soundm, 0)
-                pygame.mixer.Channel(2)
-                soundb.play(-1)
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if (x >= x2) and (x <= x2 + w2) and (y >= y2) and (y <= y2 + h2):
+                    rules()
+                    return
+                elif (x >= x1) and (x <= x1 + w1) and (y >= y1) and (y <= y1 + h1):
+                    if rel:
+                        print(1)
+                        player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+                        for i in a:
+                            mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
+                                                                        (750, 50)), 15, 1, i[0], i[1])
+                        return
+                    pygame.mixer.Sound.set_volume(soundm, 0)
+                    pygame.mixer.Channel(2)
+                    soundb.play(-1)
+                    return
+                if (x >= x3) and (x <= x3 + w3) and (y >= y3) and (y <= y3 + h3):
+                    terminate()
+                    return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -349,9 +457,12 @@ princess_group = pygame.sprite.Group()
 start_screen()
 camera = Camera()
 
-player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
-for i in a:
-    mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1), (750, 50)), 15, 1, i[0], i[1])
+if not rel:
+    player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
+    for i in a:
+        AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
+                                              (750, 50)), 15, 1, i[0], i[1])
+
 running = True
 
 while running:
@@ -359,6 +470,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
+            rel = 1
             key = event.key
             if key == pygame.K_w:
                 player.move(0, -1)
@@ -367,14 +479,14 @@ while running:
                 elif pygame.sprite.spritecollide(player, mob_group, False):
                     xp = xxp(xp)
                     if xp <= 0:
-                        terminate()
+                        death()
                 elif pygame.sprite.spritecollide(player, potion_group, False):
                     xp = potion(xp)
                     for sprite in potion_group:
                         sprite.kill()
                 elif pygame.sprite.spritecollide(player, lava_group, False):
                     xp = lava(xp)
-                    terminate()
+                    death()
                 elif pygame.sprite.spritecollide(player, princess_group, False):
                     level_number += 1
                     soundge.play(0)
@@ -390,14 +502,14 @@ while running:
                 elif pygame.sprite.spritecollide(player, mob_group, False):
                     xp = xxp(xp)
                     if xp <= 0:
-                        terminate()
+                        death()
                 elif pygame.sprite.spritecollide(player, potion_group, False):
                     xp = potion(xp)
                     for sprite in potion_group:
                         sprite.kill()
                 elif pygame.sprite.spritecollide(player, lava_group, False):
                     xp = lava(xp)
-                    terminate()
+                    death()
                 elif pygame.sprite.spritecollide(player, princess_group, False):
                     level_number += 1
                     soundge.play(0)
@@ -416,14 +528,14 @@ while running:
                     elif pygame.sprite.spritecollide(player, mob_group, False):
                         xp = xxp(xp)
                         if xp <= 0:
-                            terminate()
+                            death()
                     elif pygame.sprite.spritecollide(player, potion_group, False):
                         xp = potion(xp)
                         for sprite in potion_group:
                             sprite.kill()
                     elif pygame.sprite.spritecollide(player, lava_group, False):
                         xp = lava(xp)
-                        terminate()
+                        death()
                     elif pygame.sprite.spritecollide(player, princess_group, False):
                         level_number += 1
                         soundge.play(0)
@@ -440,10 +552,10 @@ while running:
                     elif pygame.sprite.spritecollide(player, mob_group, False):
                         xp = xxp(xp)
                         if xp <= 0:
-                            terminate()
+                            death()
                     elif pygame.sprite.spritecollide(player, lava_group, False):
                         xp = lava(xp)
-                        terminate()
+                        death()
                     elif pygame.sprite.spritecollide(player, princess_group, False):
                         level_number += 1
                         soundge.play(0)
@@ -462,10 +574,10 @@ while running:
                     elif pygame.sprite.spritecollide(player, mob_group, False):
                         xp = xxp(xp)
                         if xp <= 0:
-                            terminate()
+                            death()
                     elif pygame.sprite.spritecollide(player, lava_group, False):
                         xp = lava(xp)
-                        terminate()
+                        death()
                     elif pygame.sprite.spritecollide(player, princess_group, False):
                         level_number += 1
                         soundge.play(0)
@@ -482,14 +594,14 @@ while running:
                     elif pygame.sprite.spritecollide(player, mob_group, False):
                         xp = xxp(xp)
                         if xp <= 0:
-                            terminate()
+                            death()
                     elif pygame.sprite.spritecollide(player, potion_group, False):
                         xp = potion(xp)
                         for sprite in potion_group:
                             sprite.kill()
                     elif pygame.sprite.spritecollide(player, lava_group, False):
                         xp = lava(xp)
-                        terminate()
+                        death()
                     elif pygame.sprite.spritecollide(player, princess_group, False):
                         level_number += 1
                         soundge.play(0)
@@ -506,18 +618,9 @@ while running:
                 for sprite in chest_group:
                     sprite.kill()
             elif key == pygame.K_r:
-                xp = 100
-                soundrl.play(0)
-                for sprite in mob_group:
-                    sprite.kill()
-                for sprite in tiles_group:
-                    sprite.kill()
-                for sprite in player_group:
-                    sprite.kill()
-                player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
-                for i in a:
-                    mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
-                                                                (750, 50)), 15, 1, i[0], i[1])
+                reload()
+            elif key == pygame.K_SPACE:
+                pause()
             elif pygame.sprite.spritecollide(player, flag_group, False):
                 if not mob_group:
                     point += 100
