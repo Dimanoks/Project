@@ -212,7 +212,6 @@ class Player(pygame.sprite.Sprite):
 
     def move(self, x, y):
         self.rect = self.image.get_rect().move(tile_width * x + self.rect.x, tile_height * y + self.rect.y)
-        print(self.rect)
 
 
 FPS = 50
@@ -242,7 +241,7 @@ class Particle(pygame.sprite.Sprite):
 
 
 def reload():
-    global player, level_x, level_y, a, xp, key, mob
+    global player, level_x, level_y, a, xp, key, mob, turn, point, point_save
     xp = 100
     soundrl.play(0)
     for sprite in mob_group:
@@ -252,6 +251,8 @@ def reload():
     for sprite in player_group:
         sprite.kill()
     key = False, False, False, []
+    turn = 1
+    point = point_save
     player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
     for i in a:
         AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
@@ -309,6 +310,26 @@ def good_end():
     sys.exit()
 
 
+def background():
+    fon1 = pygame.transform.scale(load_image('fon.png'), (550, 550))
+    screen.blit(fon1, (0, 0))
+    x1 = 10
+    y1 = 500
+    w1 = 100
+    h1 = 30
+    draw('Выход', x1, y1, w1, h1)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if (x >= x1) and (x <= x1 + w1) and (y >= y1) and (y <= y1 + h1):
+                    start_screen()
+                    return
+        pygame.display.flip()
+        clock.tick(FPS)
+
 def pause():
     paused = True
     while paused:
@@ -321,24 +342,19 @@ def pause():
 
 
 def rules():
-    intro_text = ["Я не знаю что писать, напишу хоть что-то"]
     fon1 = pygame.transform.scale(load_image('fon.png'), (550, 550))
     screen.blit(fon1, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 30
+    wasd = pygame.transform.scale(load_image('wasd.jpg', -1), (100, 100))
+    screen.blit(wasd, (175, 165))
+    panel('Перемещение: ', 20, 200, 32)
+    panel('Цель игры: Пройти все уровни и спасти принцессу.', 20, 250, 32)
+    panel('Старайтсь убить всех врагов и собрать все ', 20, 280, 32)
+    panel('сундуки, за это вам дают очки.', 20, 310, 32)
     x1 = 10
-    y1 = 10
+    y1 = 500
     w1 = 100
     h1 = 30
     draw('Выход', x1, y1, w1, h1)
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color(10, 20, 90))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -356,21 +372,26 @@ def start_screen():
     intro_text = [""]
     fon = pygame.transform.scale(load_image('fon.png'), (550, 550))
     screen.blit(fon, (0, 0))
-    x1 = 25
+    x1 = 15
     y1 = 520
     w1 = 100
     h1 = 30
     draw('Играть', x1, y1, w1, h1)
-    x2 = 150
+    x2 = 120
     y2 = 520
     w2 = 125
     h2 = 30
     draw('Правила', x2, y2, w2, h2)
-    x3 = 350
+    x3 = 430
     y3 = 520
-    w3 = 125
+    w3 = 100
     h3 = 30
     draw('Выход', x3, y3, w3, h3)
+    x4 = 250
+    y4 = 520
+    w4 = 175
+    h4 = 30
+    draw('Предыстория', x4, y4, w4, h4)
     soundm.play(0)
     font = pygame.font.Font(None, 37)
     text_coord = 30
@@ -394,18 +415,16 @@ def start_screen():
                     return
                 elif (x >= x1) and (x <= x1 + w1) and (y >= y1) and (y <= y1 + h1):
                     if rel:
-                        print(1)
-                        player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
-                        for i in a:
-                            mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1),
-                                                                        (750, 50)), 15, 1, i[0], i[1])
-                        return
+                        reload()
                     pygame.mixer.Sound.set_volume(soundm, 0)
                     pygame.mixer.Channel(2)
                     soundb.play(-1)
                     return
-                if (x >= x3) and (x <= x3 + w3) and (y >= y3) and (y <= y3 + h3):
+                elif (x >= x3) and (x <= x3 + w3) and (y >= y3) and (y <= y3 + h3):
                     terminate()
+                    return
+                elif (x >= x4) and (x <= x4 + w4) and (y >= y4) and (y <= y4 + h4):
+                    background()
                     return
         pygame.display.flip()
         clock.tick(FPS)
@@ -622,6 +641,7 @@ while running:
             elif key == pygame.K_SPACE:
                 pause()
             elif pygame.sprite.spritecollide(player, flag_group, False):
+                turn = 1
                 if not mob_group:
                     point += 100
                     panel('Очки:', 20, 75, 35)
@@ -634,6 +654,7 @@ while running:
                     sprite.kill()
                 for sprite in player_group:
                     sprite.kill()
+                point_save = point
                 player, level_x, level_y, a = generate_level(load_level(lvl[level_number]))
                 for i in a:
                     mob = AnimatedSprite(pygame.transform.scale(load_image('mob1.png', -1), (750, 50)),
