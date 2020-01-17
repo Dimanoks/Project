@@ -15,12 +15,12 @@ soundws = mixer.Sound('data/a wave of the sword.ogg')
 soundeg = mixer.Sound('data/end game.ogg')
 soundgo = mixer.Sound('data/game over.ogg')
 soundm = mixer.Sound('data/monster.ogg')
-soundrl = mixer.Sound('data/restart the level.ogg')
 soundnl = mixer.Sound('data/The sound of going to the next level.ogg')
 sounddp = mixer.Sound('data/drinking a potion.ogg')
 soundge = mixer.Sound('data/gta_-_mission_compet.ogg')
 soundpr = mixer.Sound('data/woman.ogg')
 soundco = mixer.Sound('data/chest open.ogg')
+point_save = 0
 size = width, height = 550, 550
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
@@ -243,7 +243,6 @@ class Particle(pygame.sprite.Sprite):
 def reload():
     global player, level_x, level_y, a, xp, key, mob, turn, point, point_save
     xp = 100
-    soundrl.play(0)
     for sprite in mob_group:
         sprite.kill()
     for sprite in tiles_group:
@@ -390,7 +389,6 @@ def rules():
 
 
 def start_screen():
-    intro_text = [""]
     fon = pygame.transform.scale(load_image('fon.png'), (550, 550))
     screen.blit(fon, (0, 0))
     x1 = 15
@@ -413,17 +411,11 @@ def start_screen():
     w4 = 175
     h4 = 30
     draw('Предыстория', x4, y4, w4, h4)
-    soundm.play(0)
-    font = pygame.font.Font(None, 37)
-    text_coord = 30
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color(10, 20, 90))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
+    if rel:
+        if flag:
+            pygame.mixer.Sound.set_volume(soundm, 1)
+    else:
+        soundm.play(-1)
 
     while True:
         for event in pygame.event.get():
@@ -437,9 +429,13 @@ def start_screen():
                 elif (x >= x1) and (x <= x1 + w1) and (y >= y1) and (y <= y1 + h1):
                     if rel:
                         reload()
-                    pygame.mixer.Sound.set_volume(soundm, 0)
-                    pygame.mixer.Channel(2)
-                    soundb.play(-1)
+                        if flag:
+                            pygame.mixer.Sound.set_volume(soundm, 0)
+                            pygame.mixer.Sound.set_volume(soundb, 0.5)
+                    else:
+                        if flag:
+                            pygame.mixer.Sound.set_volume(soundm, 0)
+                            soundb.play(-1)
                     return
                 elif (x >= x3) and (x <= x3 + w3) and (y >= y3) and (y <= y3 + h3):
                     terminate()
@@ -688,7 +684,6 @@ while running:
                     pygame.mixer.Sound.set_volume(soundeg, 0)
                     pygame.mixer.Sound.set_volume(soundgo, 0)
                     pygame.mixer.Sound.set_volume(soundm, 0)
-                    pygame.mixer.Sound.set_volume(soundrl, 0)
                     pygame.mixer.Sound.set_volume(soundnl, 0)
                     pygame.mixer.Sound.set_volume(soundco, 0)
                     pygame.mixer.Sound.set_volume(sounddp, 0)
@@ -699,7 +694,6 @@ while running:
                     pygame.mixer.Sound.set_volume(soundws, 1)
                     pygame.mixer.Sound.set_volume(soundeg, 1)
                     pygame.mixer.Sound.set_volume(soundgo, 1)
-                    pygame.mixer.Sound.set_volume(soundrl, 1)
                     pygame.mixer.Sound.set_volume(soundco, 1)
                     pygame.mixer.Sound.set_volume(soundnl, 1)
                     pygame.mixer.Sound.set_volume(sounddp, 1)
